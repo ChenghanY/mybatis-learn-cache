@@ -1,0 +1,31 @@
+spring:
+  datasource:
+    type: com.alibaba.druid.pool.DruidDataSource
+    url: jdbc:mysql://localhost:3306/james?useUnicode=true&characterEncoding=utf8&useSSL=false&serverTimezone=Asia/Shanghai
+    username: root
+    password: 123456
+    driver-class-name: com.mysql.jdbc.Driver
+    # druid 连接池
+    druid:
+      max-active: 10000
+      max-wait: 100000
+      # 配置 druid 监控页面 ，启动后可访问http://localhost:8080/druid/sql.html
+      web-stat-filter:
+        enabled: true
+        exclusions: "*.js, *.gif, *.jpg, *.png ,*.css ,*.ico, /druid/*"
+      stat-view-servlet:
+        enabled: true
+        url-pattern: /druid/*
+        login-password: root
+        login-username: root
+
+# mybatis
+mybatis:
+  mapper-locations: mapper/*Mapper.xml
+  map-underscore-to-camel-case: true
+  # FIXME 打开认证
+  cache-enabled: true # 禁用二级缓存, 一级缓存需要再xml文件挨个指定
+
+# logback
+logging:
+  config: classpath:logback.xml
