@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.james.mybatislearncache.mapper.AnotherPersonMapper">
+    <select id="selectNameById" resultType="java.lang.String">
+        select name from person where id = #{id}
+    </select>
+
+    <update id="updateNameById">
+        update person set name = #{name} where id = #{id}
+    </update>
+</mapper>

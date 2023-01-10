@@ -1,5 +1,6 @@
 package com.james.mybatislearncache
 
+import com.james.mybatislearncache.mapper.AnotherPersonMapper
 import com.james.mybatislearncache.mapper.PersonMapper
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.boot.test.context.SpringBootTest
@@ -11,13 +12,16 @@ import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
 @SpringBootTest(classes = MybatisLearnCacheApplication.class)
-class L1CacheSpec extends Specification {
+class L2CacheSpec extends Specification {
 
     @Autowired
     TransactionTemplate transaction;
 
     @Autowired
     PersonMapper mapper;
+
+    @Autowired
+    AnotherPersonMapper anotherMapper;
 
     ExecutorService executor;
 
@@ -31,19 +35,19 @@ class L1CacheSpec extends Specification {
         mapper.deleteAll()
     }
 
-    def "证明 Mybatis 存在一级缓存, 且破坏了RC的事务隔离能力"() {
+    def "证明 Mybatis 如果配置二级缓存 (关闭一级缓存), 且破坏了RC的事务隔离能力"() {
         given:
         mapper.insert(1, "james")
         def name1
         def name2
         transaction.execute {
             // 当前线程查询
-            name1 = mapper.selectNameById(1)
+            name1 = mapper.selectNameByIdWithoutL1Cache(1)
 
             // 新开线程更新并提交
             executor.execute {
                 transaction.execute {
-                    mapper.updateNameById("kobe", 1)
+                    anotherMapper.updateNameById("kobe", 1)
                 }
             }
 
@@ -51,7 +55,7 @@ class L1CacheSpec extends Specification {
             Thread.sleep(2000)
 
             // 当前线程命中缓存并返回, 忽略了更新的值"kobe"
-            name2 = mapper.selectNameById(1)
+            name2 = mapper.selectNameByIdWithoutL1Cache(1)
         }
         Thread.sleep(3000)
         expect:
@@ -59,7 +63,7 @@ class L1CacheSpec extends Specification {
         name2 == "james"
     }
 
-    def "证明 Mybatis 存在一级缓存, 在xml上关闭缓存, 保留RC的事务隔离能力"() {
+    def "证明不同的mapper, 用的是不一样的二级缓存"() {
         given:
         mapper.insert(1, "james")
         def name1
@@ -78,8 +82,8 @@ class L1CacheSpec extends Specification {
             // 确保更新线程提交成功
             Thread.sleep(2000)
 
-            // 当前线程命中缓存并返回, 忽略了更新的值"kobe"
-            name2 = mapper.selectNameByIdWithoutL1Cache(1)
+            // 使用其他mapper排查缓存的干扰
+            name2 = anotherMapper.selectNameById(1)
         }
         Thread.sleep(3000)
         expect:
