@@ -11,7 +11,7 @@ import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
 @SpringBootTest(classes = MybatisLearnCacheApplication.class)
-class L1CacheSpec extends Specification {
+class RRL1CacheSpec extends Specification {
 
     @Autowired
     TransactionTemplate transaction;
@@ -22,8 +22,8 @@ class L1CacheSpec extends Specification {
     ExecutorService executor;
 
     def setup() {
-        // RC 隔离级别
-        transaction.setIsolationLevel(TransactionDefinition.ISOLATION_READ_COMMITTED)
+        // RR 隔离级别
+        transaction.setIsolationLevel(TransactionDefinition.ISOLATION_REPEATABLE_READ)
         executor = Executors.newFixedThreadPool(1);
     }
 
@@ -31,35 +31,7 @@ class L1CacheSpec extends Specification {
         mapper.deleteAll()
     }
 
-    def "证明 Mybatis 存在一级缓存, 且破坏了RC的事务隔离能力"() {
-        given:
-        mapper.insert(1, "james")
-        def name1
-        def name2
-        transaction.execute {
-            // 当前线程查询
-            name1 = mapper.selectNameById(1)
-
-            // 新开线程更新并提交
-            executor.execute {
-                transaction.execute {
-                    mapper.updateNameById("kobe", 1)
-                }
-            }
-
-            // 确保更新线程提交成功
-            Thread.sleep(2000)
-
-            // 当前线程命中缓存并返回, 忽略了更新的值"kobe"
-            name2 = mapper.selectNameById(1)
-        }
-        Thread.sleep(3000)
-        expect:
-        name1 == "james"
-        name2 == "james"
-    }
-
-    def "证明 Mybatis 存在一级缓存, 在xml上关闭缓存, 保留RC的事务隔离能力"() {
+    def "RR隔离级别下, 不需要借助缓存，两次读取是同样的值, RR级别下可以不关闭缓存"() {
         given:
         mapper.insert(1, "james")
         def name1
@@ -78,12 +50,12 @@ class L1CacheSpec extends Specification {
             // 确保更新线程提交成功
             Thread.sleep(2000)
 
-            // 当前线程命中缓存并返回, 忽略了更新的值"kobe"
+            // 不需要缓存, 可重复读隔离级别两次读的是一样的
             name2 = mapper.selectNameByIdWithoutL1Cache(1)
         }
         Thread.sleep(3000)
         expect:
         name1 == "james"
-        name2 == "kobe"
+        name2 == "james"
     }
 }

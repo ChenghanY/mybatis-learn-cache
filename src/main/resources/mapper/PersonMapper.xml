@@ -17,7 +17,7 @@
         select name from person where id = #{id}
     </select>
 
-    <select id="selectNameByIdWithoutL1Cache" flushCache="true" useCache="false" resultType="java.lang.String">
+    <select id="selectNameByIdWithoutL1Cache" flushCache="true" resultType="java.lang.String">
         select name from person where id = #{id}
     </select>
 
