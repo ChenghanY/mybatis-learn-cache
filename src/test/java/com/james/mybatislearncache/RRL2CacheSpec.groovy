@@ -12,7 +12,7 @@ import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
 @SpringBootTest(classes = MybatisLearnCacheApplication.class)
-class L2CacheSpec extends Specification {
+class RRL2CacheSpec extends Specification {
 
     @Autowired
     TransactionTemplate transaction;
@@ -27,7 +27,7 @@ class L2CacheSpec extends Specification {
 
     def setup() {
         // RC 隔离级别
-        transaction.setIsolationLevel(TransactionDefinition.ISOLATION_READ_COMMITTED)
+        transaction.setIsolationLevel(TransactionDefinition.ISOLATION_REPEATABLE_READ)
         executor = Executors.newFixedThreadPool(1);
     }
 
@@ -35,35 +35,7 @@ class L2CacheSpec extends Specification {
         mapper.deleteAll()
     }
 
-    def "证明 Mybatis 如果配置二级缓存 (关闭一级缓存), 且破坏了RC的事务隔离能力"() {
-        given:
-        mapper.insert(1, "james")
-        def name1
-        def name2
-        transaction.execute {
-            // 当前线程查询
-            name1 = mapper.selectNameByIdWithoutL1Cache(1)
-
-            // 新开线程更新并提交
-            executor.execute {
-                transaction.execute {
-                    anotherMapper.updateNameById("kobe", 1)
-                }
-            }
-
-            // 确保更新线程提交成功
-            Thread.sleep(2000)
-
-            // 当前线程命中缓存并返回, 忽略了更新的值"kobe"
-            name2 = mapper.selectNameByIdWithoutL1Cache(1)
-        }
-        Thread.sleep(3000)
-        expect:
-        name1 == "james"
-        name2 == "james"
-    }
-
-    def "证明不同的mapper, 用的是不一样的二级缓存"() {
+    def "RR环境下, 缓存不影响结果"() {
         given:
         mapper.insert(1, "james")
         def name1
@@ -82,12 +54,13 @@ class L2CacheSpec extends Specification {
             // 确保更新线程提交成功
             Thread.sleep(2000)
 
-            // 使用其他mapper排查缓存的干扰
+            // 使用不同的mapper保证不命中二级缓存
             name2 = anotherMapper.selectNameById(1)
         }
         Thread.sleep(3000)
         expect:
         name1 == "james"
-        name2 == "kobe"
+        // RC 下这个结果未 "kobe"
+        name2 == "james"
     }
 }
