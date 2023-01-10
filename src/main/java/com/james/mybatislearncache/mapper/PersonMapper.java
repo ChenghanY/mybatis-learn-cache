@@ -8,9 +8,14 @@ public interface PersonMapper {
 
     void insert(@Param("id") Integer id, @Param("name") String name);
 
-    void updateNameById(@Param("name") String name, @Param("name") Integer id);
+    void updateNameById(@Param("name") String name, @Param("id") Integer id);
 
-    Integer selectIdByName(@Param("name") String name);
+    String selectNameById(@Param("id") Integer id);
 
     void deleteAll();
+
+    /**
+     * 禁用一级缓存的查询
+     */
+    String selectNameByIdWithoutL1Cache(@Param("id") Integer id);
 }

@@ -23,8 +23,7 @@ spring:
 mybatis:
   mapper-locations: mapper/*Mapper.xml
   map-underscore-to-camel-case: true
-  # FIXME 打开认证
-  cache-enabled: true # 禁用二级缓存, 一级缓存需要再xml文件挨个指定
+  cache-enabled: false # 禁用全局缓存，mapper中需要自己激活缓存
 
 # logback
 logging:
