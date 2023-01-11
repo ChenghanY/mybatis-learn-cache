@@ -58,6 +58,7 @@ class RRL2CacheSpec extends Specification {
             name2 = anotherMapper.selectNameById(1)
         }
         Thread.sleep(3000)
+
         expect:
         name1 == "james"
         // RC 下这个结果未 "kobe"
