@@ -23,7 +23,7 @@ spring:
 mybatis:
   mapper-locations: mapper/*Mapper.xml
   map-underscore-to-camel-case: true
-  cache-enabled: true # 关闭二级缓存
+  cache-enabled: true
 
 # logback
 logging:
